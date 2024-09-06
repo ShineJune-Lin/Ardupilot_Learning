@@ -24,6 +24,7 @@ void Copter::read_inertia()
     // 将当前高度这一数据的参考坐标系原点设置为起飞时IMU所在位置
     current_loc.set_alt_cm(alt_above_origin_cm, Location::AltFrame::ABOVE_ORIGIN);
     if (!ahrs.home_is_set() || !current_loc.change_alt_frame(Location::AltFrame::ABOVE_HOME)) {
+        //重点：
         // if home has not been set yet we treat alt-above-origin as alt-above-home
         current_loc.set_alt_cm(alt_above_origin_cm, Location::AltFrame::ABOVE_HOME);
     }

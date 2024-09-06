@@ -2570,21 +2570,25 @@ void GCS::update_send()
 {
     update_send_has_been_called = true;
 
+    // 有哪些指令模块需要用啊，就初始化一下
     if (!initialised_missionitemprotocol_objects) {
         initialised_missionitemprotocol_objects = true;
         // once-only initialisation of MissionItemProtocol objects:
+        // 主任务指令模块
 #if AP_MISSION_ENABLED
         AP_Mission *mission = AP::mission();
         if (mission != nullptr) {
             missionitemprotocols[MAV_MISSION_TYPE_MISSION] = NEW_NOTHROW MissionItemProtocol_Waypoints(*mission);
         }
 #endif
+        // 配置其他返航降落点指令模块
 #if HAL_RALLY_ENABLED
         AP_Rally *rally = AP::rally();
         if (rally != nullptr) {
             missionitemprotocols[MAV_MISSION_TYPE_RALLY] = NEW_NOTHROW MissionItemProtocol_Rally(*rally);
         }
 #endif
+        // 地理围栏指令模块
 #if AP_FENCE_ENABLED
         AC_Fence *fence = AP::fence();
         if (fence != nullptr) {
@@ -2593,6 +2597,7 @@ void GCS::update_send()
 #endif
     }
 
+// 遍历已开启的指令模块，并执行他们的更新
     for (auto *prot : missionitemprotocols) {
         if (prot == nullptr) {
             continue;

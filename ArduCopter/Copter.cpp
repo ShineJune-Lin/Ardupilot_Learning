@@ -83,6 +83,7 @@
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 #define SCHED_TASK(func, _interval_ticks, _max_time_micros, _prio) SCHED_TASK_CLASS(Copter, &copter, func, _interval_ticks, _max_time_micros, _prio)
+// 默认绑定到copter
 #define FAST_TASK(func) FAST_TASK_CLASS(Copter, &copter, func)
 
 /*
