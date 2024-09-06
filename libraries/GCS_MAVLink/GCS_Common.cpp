@@ -1268,13 +1268,16 @@ ap_message GCS_MAVLINK::next_deferred_bucket_message_to_send(uint16_t now16_ms)
 // expected to be overridden, not this function.
 bool GCS_MAVLINK::do_try_send_message(const ap_message id)
 {
+    // 喂喂喂有空发消息吗？
     const bool in_delay_callback = hal.scheduler->in_delay_callback();
     if (in_delay_callback && !should_send_message_in_delay_callback(id)) {
         return true;
     }
+    // 遥测没问题吧？
     if (telemetry_delayed()) {
         return false;
     }
+    // 大哥罩你方圆之内无人打搅
     WITH_SEMAPHORE(comm_chan_lock(chan));
 #if GCS_DEBUG_SEND_MESSAGE_TIMINGS
     void *data = hal.scheduler->disable_interrupts_save();
@@ -1289,6 +1292,7 @@ bool GCS_MAVLINK::do_try_send_message(const ap_message id)
         return false;
     }
 #if GCS_DEBUG_SEND_MESSAGE_TIMINGS
+    // 测量消息发送用时
     const uint32_t delta_us = AP_HAL::micros() - start_send_message_us;
     hal.scheduler->restore_interrupts(data);
     if (delta_us > try_send_message_stats.longest_time_us) {
@@ -1478,10 +1482,12 @@ void GCS_MAVLINK::update_send()
 #if HAL_LOGGING_ENABLED
     if (!hal.scheduler->in_delay_callback()) {
         // AP_Logger will not send log data if we are armed.
+        // 有空的时候才发送log日志
         AP::logger().handle_log_send();
     }
 #endif
     if (!deferred_messages_initialised) {
+        // 初始化消息发送间隔
         initialise_message_intervals_from_streamrates();
 #if HAL_MAVLINK_INTERVALS_FROM_FILES_ENABLED
         initialise_message_intervals_from_config_files();
@@ -1512,6 +1518,7 @@ void GCS_MAVLINK::update_send()
 
         // check if any "specially handled" messages should be sent out
         {
+            // 训话要讲究层次，先编个号吧
             const int8_t next = deferred_message_to_send_index(start16);
             if (next != -1) {
                 if (!do_try_send_message(deferred_message[next].id)) {
@@ -1558,12 +1565,14 @@ void GCS_MAVLINK::update_send()
             continue;
         }
 
+        // 发送下一句训话
         ap_message next = next_deferred_bucket_message_to_send(start16);
         if (next != no_message_to_send) {
             if (!do_try_send_message(next)) {
                 break;
             }
             bucket_message_ids_to_send.clear(next);
+            // 这轮发完了就安排下一轮，飞机卖完了就安排下一批
             if (bucket_message_ids_to_send.count() == 0) {
                 // we sent everything in the bucket.  Reschedule it.
                 // we try to keep output on a regular clock to avoid
@@ -1574,6 +1583,7 @@ void GCS_MAVLINK::update_send()
                 if (uint16_t(start16 - deferred_message_bucket[sending_bucket_id].last_sent_ms) > interval_ms) {
                     deferred_message_bucket[sending_bucket_id].last_sent_ms = start16;
                 }
+                // 咱们下一个桶里见，看看仓库里还有没发的飞机不
                 find_next_bucket_to_send(start16);
             }
 #if GCS_DEBUG_SEND_MESSAGE_TIMINGS
