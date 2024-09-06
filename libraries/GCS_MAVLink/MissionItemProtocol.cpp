@@ -369,10 +369,12 @@ void MissionItemProtocol::queued_request_send()
 
 void MissionItemProtocol::update()
 {
+    // init_send_requests的时候会设为true
     if (!receiving) {
         // we don't need to do anything unless we're sending requests
         return;
     }
+    // handle_mission_count等地方的里面会把link指向GCS_Mavlink
     if (link == nullptr) {
         INTERNAL_ERROR(AP_InternalError::error_t::gcs_bad_missionprotocol_link);
         return;
@@ -391,6 +393,7 @@ void MissionItemProtocol::update()
                                          mission_type());
         }
         link = nullptr;
+        // 疑问：释放内存，具体啥占的内存？
         free_upload_resources();
         return;
     }
