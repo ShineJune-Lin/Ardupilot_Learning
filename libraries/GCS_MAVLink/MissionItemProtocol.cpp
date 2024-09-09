@@ -374,7 +374,7 @@ void MissionItemProtocol::update()
         // we don't need to do anything unless we're sending requests
         return;
     }
-    // handle_mission_count等地方的里面会把link指向GCS_Mavlink
+    // handle_mission_count等地方的里面会把link指向GCS_Mavlink，任务模块的都是唯一实例
     if (link == nullptr) {
         INTERNAL_ERROR(AP_InternalError::error_t::gcs_bad_missionprotocol_link);
         return;

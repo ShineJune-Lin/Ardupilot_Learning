@@ -974,7 +974,7 @@ void GCS_MAVLINK::handle_mission_item(const mavlink_message_t &msg)
 
     prot->handle_mission_item(msg, mission_item_int);
 }
-
+// 地面站接收端用的编号跟飞控的不同，要做个对应关系
 ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) const
 {
     // MSG_NEXT_MISSION_REQUEST doesn't correspond to a mavlink message directly.
@@ -1644,6 +1644,7 @@ void GCS_MAVLINK::remove_message_from_bucket(int8_t bucket, ap_message id)
 
 bool GCS_MAVLINK::set_ap_message_interval(enum ap_message id, uint16_t interval_ms)
 {
+    // 这种消息强制固定间隔
     if (id == MSG_NEXT_PARAM) {
         // force parameters to *always* get streamed so a vehicle is
         // recoverable from bad configuration:
@@ -1654,6 +1655,7 @@ bool GCS_MAVLINK::set_ap_message_interval(enum ap_message id, uint16_t interval_
         }
     }
 
+// 通过调度器的八百分之一来定
 #if AP_SCHEDULER_ENABLED
     // send messages out at most 80% of main loop rate
     if (interval_ms != 0 &&
@@ -1662,6 +1664,7 @@ bool GCS_MAVLINK::set_ap_message_interval(enum ap_message id, uint16_t interval_
     }
 #endif
 
+// 看看有没有哪个消息延迟了
     // check if it's a specially-handled message:
     const int8_t deferred_offset = get_deferred_message_index(id);
     if (deferred_offset != -1) {
@@ -1670,6 +1673,7 @@ bool GCS_MAVLINK::set_ap_message_interval(enum ap_message id, uint16_t interval_
         return true;
     }
 
+// 遍历延迟的桶，看看哪个最接近当前需要的间隔时间
     // see which bucket has the closest interval:
     int8_t closest_bucket = -1;
     uint16_t closest_bucket_interval_delta = UINT16_MAX;
@@ -1704,6 +1708,9 @@ bool GCS_MAVLINK::set_ap_message_interval(enum ap_message id, uint16_t interval_
         return true;
     }
 
+// 如果消息已经存在于某个桶中，并且新的间隔为0，移除该消息。
+// 如果消息不需要移动，直接返回。
+// 如果需要移动，先从原有的桶中移除消息。
     if (in_bucket != -1) {
         if (interval_ms == 0) {
             // remove it
@@ -1722,7 +1729,9 @@ bool GCS_MAVLINK::set_ap_message_interval(enum ap_message id, uint16_t interval_
             empty_bucket_id = in_bucket;
         }
     }
-
+// 如果没有找到合适的桶并且没有空桶，返回失败。
+// 如果找到最接近的桶或有空桶，则分配或更新桶的间隔，并设置消息 ID。
+// 如果没有桶在发送中，设置当前的桶为发送桶，并更新待发送消息 ID 集合。
     if (closest_bucket == -1 && empty_bucket_id == -1) {
         // gah?!
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
@@ -2608,6 +2617,8 @@ void GCS::update_send()
     // round-robin the GCS_MAVLINK backend that gets to go first so
     // one backend doesn't monopolise all of the time allowed for sending
     // messages
+    // 轮询但并不是每次都从头开始，而是每次都从有需要的开始，然后按顺序，比如这次是3号机优先，那就先发345，然后再发12
+    // chan是GCS指向gcs_mavlink的一个指针
     for (uint8_t i=first_backend_to_send; i<num_gcs(); i++) {
         chan(i)->update_send();
     }
@@ -2615,6 +2626,7 @@ void GCS::update_send()
         chan(i)->update_send();
     }
 
+    //Peter对这一语句的优化做了很多，可以看看
     service_statustext();
 
     first_backend_to_send++;
@@ -6633,6 +6645,7 @@ void GCS_MAVLINK::initialise_message_intervals_from_config_files()
 
 void GCS_MAVLINK::initialise_message_intervals_from_streamrates()
 {
+    // 二次时间复杂度
     // this is O(n^2), but it's once at boot and across a 10-entry list...
     for (uint8_t i=0; all_stream_entries[i].ap_message_ids != nullptr; i++) {
         initialise_message_intervals_for_stream(all_stream_entries[i].stream_id);
