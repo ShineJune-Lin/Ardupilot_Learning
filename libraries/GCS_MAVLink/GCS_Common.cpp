@@ -974,7 +974,7 @@ void GCS_MAVLINK::handle_mission_item(const mavlink_message_t &msg)
 
     prot->handle_mission_item(msg, mission_item_int);
 }
-// 地面站接收端用的编号跟飞控的不同，要做个对应关系
+// 地面站接收端用的编号跟飞控的不同，要做个对应关系，因为开发俩软件的人不同，而且很多，每次都对很麻烦，干脆做个mapping table
 ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) const
 {
     // MSG_NEXT_MISSION_REQUEST doesn't correspond to a mavlink message directly.
