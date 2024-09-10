@@ -1842,9 +1842,11 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
 
     status.packet_rx_drop_count = 0;
 
+    // 获取有多少个能读的字节
     const uint16_t nbytes = _port->available();
     for (uint16_t i=0; i<nbytes; i++)
     {
+        // 既然有，那咱就开始读
         const uint8_t c = (uint8_t)_port->read();
         const uint32_t protocol_timeout = 4000;
         

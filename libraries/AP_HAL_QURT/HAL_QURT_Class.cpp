@@ -90,6 +90,7 @@ HAL_QURT::HAL_QURT() :
 {
 }
 
+// Callbacks来自HAL_QURT继承的AP_HAL
 static HAL_QURT::Callbacks *_callbacks;
 
 void HAL_QURT::main_thread(void)

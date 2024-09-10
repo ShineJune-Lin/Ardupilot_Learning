@@ -16,6 +16,7 @@
  */
 #pragma once
 
+// 版权咋突然变成intel了
 #include "HAL.h"
 
 #ifndef AP_MAIN
